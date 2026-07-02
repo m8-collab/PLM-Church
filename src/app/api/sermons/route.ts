@@ -11,9 +11,9 @@ const sermonSchema = z.object({
   title: z.string().min(1),
   speaker: z.string().min(1),
   series: z.string().optional(),
-  date: z.string(),
-  videoUrl: z.string().url().optional(),
-  audioUrl: z.string().url().optional(),
+  date: z.string().optional(),
+  videoUrl: z.string().url().optional().or(z.literal("")),
+  audioUrl: z.string().url().optional().or(z.literal("")),
   summary: z.string().min(1),
 });
 
@@ -26,7 +26,12 @@ export async function POST(req: Request) {
   }
 
   const sermon = await prisma.sermon.create({
-    data: { ...parsed.data, date: new Date(parsed.data.date) },
+    data: {
+      ...parsed.data,
+      date: parsed.data.date ? new Date(parsed.data.date) : new Date(),
+      videoUrl: parsed.data.videoUrl || null,
+      audioUrl: parsed.data.audioUrl || null,
+    },
   });
   return NextResponse.json(sermon, { status: 201 });
 }
