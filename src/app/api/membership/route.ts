@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma as defaultPrisma } from "@/lib/prisma";
 import { sendAdminNotification } from "@/lib/email";
 
 export async function POST(req: Request) {
+  const prisma = defaultPrisma;
   const body = await req.json();
   const { name, email, phone, message } = body;
 
