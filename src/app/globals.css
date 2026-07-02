@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400;700&display=swap");
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #fdf8f2; /* cream */
+  color: #2d2419; /* ink */
+}
+
+/* Dot-grid texture used on dark sections (hero, ministries) - matches the
+   uploaded design's subtle radial dot pattern */
+.dot-pattern {
+  background-image: radial-gradient(circle, #fff 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Gold underline accent for headings */
+.heading-rule {
+  position: relative;
+  display: inline-block;
+}
+.heading-rule::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.18em;
+  height: 0.12em;
+  background: #c9913d;
+  border-radius: 2px;
+  transform: scaleX(0.92);
+}
+
+@keyframes scrollPulse {
+  0%, 100% { opacity: 0.4; transform: scaleY(1); }
+  50% { opacity: 1; transform: scaleY(1.1); }
+}
+.scroll-pulse {
+  animation: scrollPulse 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: 2px solid #c9913d;
+  outline-offset: 2px;
+}

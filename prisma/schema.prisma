@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Member {
+  id        String    @id @default(cuid())
+  name      String
+  email     String    @unique
+  password  String    // bcrypt hash
+  createdAt DateTime  @default(now())
+  donations Donation[]
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  location    String
+  startTime   DateTime
+  endTime     DateTime?
+  createdAt   DateTime @default(now())
+}
+
+model Sermon {
+  id          String   @id @default(cuid())
+  title       String
+  speaker     String
+  series      String?
+  date        DateTime
+  videoUrl    String?
+  audioUrl    String?
+  summary     String
+  createdAt   DateTime @default(now())
+}
+
+model Donation {
+  id          String   @id @default(cuid())
+  amountCents Int
+  fund        String   // e.g. "General", "Missions", "Building"
+  donorName   String?
+  donorEmail  String?
+  memberId    String?
+  member      Member?  @relation(fields: [memberId], references: [id])
+  stripeId    String?
+  createdAt   DateTime @default(now())
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  reason    String?
+  message   String
+  createdAt DateTime @default(now())
+}
