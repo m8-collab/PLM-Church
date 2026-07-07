@@ -1,9 +1,11 @@
 # Pamoja Life Ministry — Church Website
 
-A full-stack church website: Next.js (React) + Node API routes, a SQLite
-database via Prisma, member login (NextAuth), and online giving (Stripe
-Checkout, test mode by default). Styled to match the Pamoja Life Ministry
-brand (green/gold, Playfair Display + Lato).
+A full-stack church website: Next.js (React) + Node API routes, a Postgres
+database via Prisma (hosted on Supabase), member login (NextAuth), photo/video
+uploads via Supabase Storage, and a simple giving record (no payment
+processor — donors give by bank transfer or mobile money and the gift is
+logged). Styled to match the Pamoja Life Ministry brand (green/gold, Playfair
+Display + Lato).
 
 **Pages:** Home, About, Sermons, Events, Ministries, Blog, Donate, Contact,
 Login/Register, Member Dashboard.
@@ -15,23 +17,27 @@ steps any Next.js app needs, nothing church-specific to figure out.
 ## 1. Prerequisites
 
 - [Node.js](https://nodejs.org) 18 or newer (check with `node -v`)
-- That's it — the database is a local SQLite file, no separate DB server needed.
+- A free [Supabase](https://supabase.com) account (this project uses Supabase
+  for both the database and file storage — no local database server needed).
 
 ## 2. Install and set up
 
 ```bash
 cd pamoja-life-ministry
 npm install
-cp .env.example .env
+cp .env.local .env
 ```
 
 Open `.env` and:
 - Generate a real `NEXTAUTH_SECRET`: run `openssl rand -base64 32` and paste the result in.
-- Leave `DATABASE_URL` as-is — it points to a local SQLite file.
-- Leave the Stripe keys as placeholders for now (donations will show a clear
-  setup message until you add real ones — see step 5).
+- Create a free project at https://supabase.com, then fill in:
+  - `DATABASE_URL` — Project Settings → Database → Connection string ("URI", transaction pooler)
+  - `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` — Project Settings → API
+- In the Supabase dashboard, go to **Storage** and create two **public**
+  buckets: `gallery-photos` and `sermon-videos` (these hold the photos and
+  videos an admin uploads).
 
-Then create the database and load sample content:
+Then create the database tables and load sample content:
 
 ```bash
 npx prisma generate
@@ -39,9 +45,10 @@ npm run db:push
 npm run db:seed
 ```
 
-This creates `prisma/dev.db` with a sample member login
-(`grace@example.org` / `password123`), four sample events, and three sample
-sermons matching the church's Firm Foundation and Pamoja series.
+This connects to your Supabase database, creates the tables, and seeds a
+sample member login (`grace@example.org` / `password123`), four sample
+events, and three sample sermons matching the church's Firm Foundation and
+Pamoja series.
 
 ## 3. Run it locally
 
@@ -59,23 +66,30 @@ running on your own machine.
 
 `/dashboard` is protected — visiting it while logged out redirects to `/login`.
 
-## 5. Turn on real donations (optional)
+## 5. How giving works
 
-The Donate page works end-to-end against Stripe's **test mode**, which uses
-fake cards and never touches real money:
+The Donate page doesn't process payments itself — it shows the church's bank
+transfer / mobile money details, and once someone gives, they fill in a short
+form so the gift gets recorded in the database (fund, amount, name, email).
+Edit the placeholder bank/mobile money details in
+`src/app/donate/page.tsx` with your real account details.
 
-1. Create a free account at https://dashboard.stripe.com
-2. Copy your **test mode** Secret key and Publishable key from
-   https://dashboard.stripe.com/test/apikeys
-3. Paste them into `.env` as `STRIPE_SECRET_KEY` and
-   `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
-4. Restart `npm run dev`
-5. Use Stripe's test card `4242 4242 4242 4242`, any future expiry, any CVC
+## 6. Uploading photos and sermon videos
 
-To accept real donations, switch to your Stripe **live mode** keys once
-you've verified your Stripe account — no code changes needed.
+Sign in as an admin (see step 7) and open `/dashboard`:
 
-## 6. Editing content
+- **`/dashboard/gallery`** — pick a photo file from your computer. It's
+  uploaded straight to the `gallery-photos` bucket in Supabase Storage, and
+  the public URL Supabase returns is saved to the `GalleryItem` table.
+- **`/dashboard/sermons`** — either pick a video file (uploaded to the
+  `sermon-videos` bucket) or paste a link such as a YouTube URL — better for
+  full, long services since it won't use your Supabase storage space. The
+  chosen video's URL is saved to the `Sermon` table.
+
+In both cases, the actual photo/video file lives in Supabase Storage, not in
+the database — the database only stores a text link pointing to it.
+
+## 7. Editing content
 
 Events and sermons live in the database, seeded by `prisma/seed.ts`. The
 fastest way to add or edit them locally is:
@@ -98,13 +112,13 @@ like those wired to the database too, the same way sermons and events are.
 
 ## 7. Putting this on the internet later
 
-This README covers running it on your own computer. When you're ready to put
-it on the open internet, you'll want:
+This README covers running it on your own computer, already pointed at your
+Supabase database. When you're ready to put it on the open internet, see
+`DEPLOYMENT.md` for the full Vercel + Supabase deployment steps. In short,
+you'll want:
 
-- A real Postgres database instead of SQLite (swap the `provider` in
-  `prisma/schema.prisma` and update `DATABASE_URL`)
-- A host like Vercel, Railway, or Render
-- Stripe **live mode** keys
+- Your Supabase project's connection string and API keys added as Vercel
+  environment variables (already required for local dev too — see step 2)
 - A real email provider (e.g. Resend) wired into the contact form so messages
   reach an inbox, not just the database
 

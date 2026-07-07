@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -47,7 +47,6 @@ model Donation {
   donorEmail  String?
   memberId    String?
   member      Member?  @relation(fields: [memberId], references: [id])
-  stripeId    String?
   createdAt   DateTime @default(now())
 }
 

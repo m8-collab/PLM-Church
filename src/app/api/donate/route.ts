@@ -1,52 +1,33 @@
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
+import { z } from "zod";
+
+// No payment processor is wired up here — this just records that a gift was
+// given (e.g. by bank transfer or mobile money) so the church has a record
+// of it and can follow up. See the Donate page for the giving instructions
+// shown to visitors.
+const donationSchema = z.object({
+  amount: z.number().positive(),
+  fund: z.string().min(1),
+  donorName: z.string().optional(),
+  donorEmail: z.string().email().optional(),
+});
 
 export async function POST(req: Request) {
-  const { amount, fund } = await req.json();
-
-  if (!amount || amount <= 0) {
-    return NextResponse.json({ error: "Invalid amount." }, { status: 400 });
+  const body = await req.json();
+  const parsed = donationSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes("replace_me")) {
-    return NextResponse.json(
-      {
-        error:
-          "Stripe isn't configured yet. Add a real STRIPE_SECRET_KEY to your .env file (get a free test key at https://dashboard.stripe.com/test/apikeys).",
-      },
-      { status: 500 }
-    );
-  }
-
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-  const origin = req.headers.get("origin") ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    payment_method_types: ["card"],
-    line_items: [
-      {
-        price_data: {
-          currency: "usd",
-          product_data: { name: `${fund} Fund Donation` },
-          unit_amount: Math.round(amount * 100),
-        },
-        quantity: 1,
-      },
-    ],
-    success_url: `${origin}/donate?status=success`,
-    cancel_url: `${origin}/donate?status=cancelled`,
-  });
-
-  // Record the pending donation so it shows up even before the webhook confirms it.
-  await prisma.donation.create({
+  const donation = await prisma.donation.create({
     data: {
-      amountCents: Math.round(amount * 100),
-      fund,
-      stripeId: session.id,
+      amountCents: Math.round(parsed.data.amount * 100),
+      fund: parsed.data.fund,
+      donorName: parsed.data.donorName || null,
+      donorEmail: parsed.data.donorEmail || null,
     },
   });
 
-  return NextResponse.json({ url: session.url });
+  return NextResponse.json(donation, { status: 201 });
 }

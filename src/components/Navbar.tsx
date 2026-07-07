@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import CrossMark from "./CrossMark";
 
 const links = [
   { href: "/about", label: "About" },
@@ -19,14 +19,10 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 bg-green shadow-lg px-4 sm:px-8 h-16 flex items-center justify-between">
-      <Link href="/" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
-        <CrossMark size={30} />
-        <span className="font-display font-bold text-lg text-goldlight leading-tight">
-          Pamoja Life Ministry
-          <span className="block font-body font-light text-[0.65rem] text-clay tracking-[0.12em] uppercase">
-            Together in Faith
-          </span>
-        </span>
+      <Link href="/" className="flex items-center" onClick={() => setOpen(false)}>
+        <div className="relative h-12 w-12 sm:h-14 sm:w-14 rounded-full overflow-hidden bg-white/10 border border-white/20 shadow-sm">
+          <Image src="/logo.png" alt="Pamoja Life Ministry logo" fill className="object-contain" priority />
+        </div>
       </Link>
 
       <ul className="hidden md:flex items-center font-body">
