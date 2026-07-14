@@ -132,4 +132,4 @@ src/components/      Shared UI: Navbar, Footer, CrossMark logo, auth widgets
 src/lib/             Database client and auth configuration
 prisma/schema.prisma Database tables: Member, Event, Sermon, Donation, ContactMessage
 prisma/seed.ts        Sample data loaded by `npm run db:seed`
-```
+``
